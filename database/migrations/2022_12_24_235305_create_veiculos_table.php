@@ -14,7 +14,10 @@ return new class extends Migration
     public function up()
     {
         Schema::create('veiculos', function (Blueprint $table) {
-            $table->id();
+            $table->string('modelo');
+            $table->string('cor');
+            $table->integer('ano');
+            $table->string('placa');
             $table->timestamps();
         });
     }
