@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Veiculo as ModelsVeiculo;
 use App\Http\Resources\Veiculo as VeiculoResource;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class VeiculosController extends Controller
@@ -57,7 +58,21 @@ class VeiculosController extends Controller
      */
     public function show($id)
     {
-        //
+        /*$veiculo = ModelsVeiculo::findOrFail($id);
+        return new ModelsVeiculo($veiculo);*/
+
+        $veiculo = DB::table('veiculos')->find($id);
+
+        if($veiculo != null or $veiculo != '') {
+
+            return $veiculo;
+        }
+        else {
+
+            return response()->json([
+                "message" => "nenhuma placa correponde ao parâmetro informado"
+            ], 301);
+        }
     }
 
     /**
