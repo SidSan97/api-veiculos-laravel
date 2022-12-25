@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Veiculo as ModelsVeiculo;
+use App\Http\Resources\Veiculo as VeiculoResource;
 use Illuminate\Http\Request;
 
 class VeiculosController extends Controller
@@ -13,7 +15,8 @@ class VeiculosController extends Controller
      */
     public function index()
     {
-        //
+        $veiculo = ModelsVeiculo::paginate(15);
+        return VeiculoResource::colection($veiculo);
     }
 
     /**
@@ -34,7 +37,16 @@ class VeiculosController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $veiculo = new ModelsVeiculo();
+
+        $veiculo->modelo = $request->input('modelo');
+        $veiculo->cor    = $request->input('cor');
+        $veiculo->ano    = $request->input('ano');
+        $veiculo->placa  = $request->input('placa');
+
+        if( $veiculo->save() ){
+            return new VeiculoResource( $veiculo );
+          }
     }
 
     /**
@@ -68,7 +80,16 @@ class VeiculosController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $veiculo = ModelsVeiculo::findOrFail($request->id);
+
+        $veiculo->modelo = $request->input('modelo');
+        $veiculo->cor    = $request->input('cor');
+        $veiculo->ano    = $request->input('ano');
+        $veiculo->placa  = $request->input('placa');
+
+        if( $veiculo->save() ){
+            return new VeiculoResource( $veiculo );
+          }
     }
 
     /**
@@ -79,6 +100,10 @@ class VeiculosController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $veiculo = ModelsVeiculo::findOrFail($id);
+
+        if( $veiculo->delete() ){
+            return new VeiculoResource( $veiculo );
+          }
     }
 }
