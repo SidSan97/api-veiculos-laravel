@@ -16,8 +16,8 @@ class VeiculosController extends Controller
      */
     public function index()
     {
-        $veiculo = ModelsVeiculo::paginate(15);
-        return VeiculoResource::colection($veiculo);
+        $veiculo = DB::table('veiculos')->get();
+        return $veiculo;
     }
 
     /**
