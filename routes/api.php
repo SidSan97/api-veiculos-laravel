@@ -21,7 +21,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('veiculos', [VeiculosController::class, 'index']);
 
-Route::get('veiculos/{id}', [VeiculosController::class, 'show']);
+Route::get('veiculos/{parametro}/{valor}', [VeiculosController::class, 'show']);
 
 Route::post('veiculos', [VeiculosController::class, 'store']);
 
