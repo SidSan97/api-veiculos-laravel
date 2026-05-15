@@ -16,4 +16,4 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-./api_veiculos_laravel.sqlite
+/api_veiculos_laravel.sqlite
