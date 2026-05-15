@@ -16,11 +16,21 @@ class Veiculo extends JsonResource
     {
         return [
             'id' => $this->id,
+            'marca' => $this->marca,
             'modelo' => $this->modelo,
             'cor' => $this->cor,
             'ano' => $this->ano,
-            'placa' => $this->placa
-          ];
-        //return parent::toArray($request);
+            'placa' => $this->placa,
+            'estado' => $this->estado,
+            'preco' => $this->preco,
+            'km' => $this->km,
+            'transmissao' => $this->transmissao,
+            'motor' => $this->motor,
+            'observacoes' => $this->observacoes,
+            'imagem' => $this->imagem,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'multas' => Multa::collection($this->whenLoaded('multas')),
+        ];
     }
 }

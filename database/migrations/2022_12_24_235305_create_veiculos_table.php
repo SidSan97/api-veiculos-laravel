@@ -14,11 +14,19 @@ return new class extends Migration
     public function up()
     {
         Schema::create('veiculos', function (Blueprint $table) {
-            $table->increments('id');
+            $table->id();
+            $table->string('marca');
             $table->string('modelo');
             $table->string('cor');
             $table->integer('ano');
             $table->string('placa');
+            $table->enum('estado', ['novo', 'semi-novo']);
+            $table->decimal('preco', 10, 2);
+            $table->float('km');
+            $table->string('transmissao');
+            $table->string('motor');
+            $table->text('observacoes')->nullable();
+            $table->string('imagem')->nullable();
             $table->timestamps();
         });
     }
