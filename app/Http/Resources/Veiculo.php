@@ -27,7 +27,7 @@ class Veiculo extends JsonResource
             'transmissao' => $this->transmissao,
             'motor' => $this->motor,
             'observacoes' => $this->observacoes,
-            'imagem' => $this->imagem,
+            'imagem' => $this->imagem ? env('APP_URL') . '/' . $this->imagem : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'multas' => Multa::collection($this->whenLoaded('multas')),
