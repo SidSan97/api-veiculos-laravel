@@ -15,11 +15,6 @@ class VeiculosController extends Controller
         );
     }
 
-    public function create()
-    {
-        //
-    }
-
     public function store(Request $request)
     {
         $veiculo = new ModelsVeiculo();
@@ -53,35 +48,9 @@ class VeiculosController extends Controller
             $veiculo->imagem = 'carros/' . $pastaModelo . '/' . $nomeArquivo;
         }
 
-        if( $veiculo->save() ){
-            // Cadastro de multas, se houver
-            $multas = $request->input('multas', []);
-            if (is_array($multas) && count($multas) > 0) {
-                foreach ($multas as $multaData) {
-                    $multaImagem = null;
-                    // Upload da imagem da multa (se enviada via multipart)
-                    if ($request->hasFile('multas') && is_array($request->file('multas'))) {
-                        $index = array_search($multaData, $multas, true);
-                        if ($index !== false && isset($request->file('multas')[$index]['imagem'])) {
-                            $file = $request->file('multas')[$index]['imagem'];
-                            if ($file && $file->isValid()) {
-                                $multaImagemPath = $file->store('multas', 'public');
-                                $multaImagem = url('storage/' . $multaImagemPath);
-                            }
-                        }
-                    }
-                    $veiculo->multas()->create([
-                        'descricao'    => $multaData['descricao'] ?? null,
-                        'valor'        => $multaData['valor'] ?? null,
-                        'data'         => $multaData['data'] ?? null,
-                        'cidade'       => $multaData['cidade'] ?? null,
-                        'status'       => $multaData['status'] ?? null,
-                        'observacoes'  => $multaData['observacoes'] ?? null,
-                        'imagem'       => $multaImagem ?? ($multaData['imagem'] ?? null),
-                    ]);
-                }
-            }
-            return new VeiculoResource( $veiculo->load('multas') );
+        if ($veiculo->save()) {
+            $this->syncMultas($veiculo, $request);
+            return new VeiculoResource($veiculo->load('multas'));
         }
     }
 
@@ -98,23 +67,103 @@ class VeiculosController extends Controller
         return VeiculoResource::collection($veiculos);
     }
 
-    public function edit($id)
-    {
-        //
-    }
-
     public function update(Request $request, $id)
     {
-        $veiculo = ModelsVeiculo::findOrFail($request->id);
+        $veiculo = ModelsVeiculo::findOrFail($id);
 
-        $veiculo->modelo = $request->input('modelo');
-        $veiculo->cor    = $request->input('cor');
-        $veiculo->ano    = $request->input('ano');
-        $veiculo->placa  = $request->input('placa');
+        $veiculo->marca        = $request->input('marca');
+        $veiculo->modelo       = $request->input('modelo');
+        $veiculo->cor          = $request->input('cor');
+        $veiculo->ano          = $request->input('ano');
+        $veiculo->placa        = $request->input('placa');
+        $veiculo->estado       = $request->input('estado');
+        $veiculo->preco        = $request->input('preco');
+        $veiculo->km           = $request->input('km');
+        $veiculo->transmissao  = $request->input('transmissao');
+        $veiculo->motor        = $request->input('motor');
+        $veiculo->observacoes  = $request->input('observacoes');
 
-        if( $veiculo->save() ){
-            return new VeiculoResource( $veiculo->load('multas') );
-          }
+        if ($request->hasFile('imagem') && $request->file('imagem')->isValid()) {
+            $pastaModelo = str_replace(' ', '-', trim($veiculo->modelo ?? 'outros'));
+            $dir = public_path('carros' . DIRECTORY_SEPARATOR . $pastaModelo);
+
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+
+            $file = $request->file('imagem');
+            $nomeArquivo = basename($file->getClientOriginalName());
+            $nomeArquivo = uniqid() . '_' . $nomeArquivo;
+            $file->move($dir, $nomeArquivo);
+
+            $veiculo->imagem = 'carros/' . $pastaModelo . '/' . $nomeArquivo;
+        }
+
+        if ($veiculo->save()) {
+            $this->syncMultas($veiculo, $request);
+            return new VeiculoResource($veiculo->load('multas'));
+        }
+    }
+
+    private function syncMultas(ModelsVeiculo $veiculo, Request $request): void
+    {
+        $multas = $request->input('multas', []);
+        if (! is_array($multas) || count($multas) === 0) {
+            return;
+        }
+
+        foreach ($multas as $index => $multaData) {
+            if (! is_array($multaData)) {
+                continue;
+            }
+
+            $multaImagem = $this->resolveMultaImagem($request, $index);
+            $attributes = [
+                'descricao'   => $multaData['descricao'] ?? null,
+                'valor'       => $multaData['valor'] ?? null,
+                'data'        => $multaData['data'] ?? null,
+                'cidade'      => $multaData['cidade'] ?? null,
+                'status'      => $multaData['status'] ?? null,
+                'observacoes' => $multaData['observacoes'] ?? null,
+            ];
+
+            if ($multaImagem !== null) {
+                $attributes['imagem'] = $multaImagem;
+            } elseif (array_key_exists('imagem', $multaData)) {
+                $attributes['imagem'] = $multaData['imagem'];
+            }
+
+            if (! empty($multaData['id'])) {
+                $multa = $veiculo->multas()->where('id', $multaData['id'])->first();
+                if ($multa) {
+                    $multa->update($attributes);
+                    continue;
+                }
+            }
+
+            $veiculo->multas()->create($attributes);
+        }
+    }
+
+    private function resolveMultaImagem(Request $request, int $index): ?string
+    {
+        if (! $request->hasFile('multas') || ! is_array($request->file('multas'))) {
+            return null;
+        }
+
+        $files = $request->file('multas');
+        if (! isset($files[$index]['imagem'])) {
+            return null;
+        }
+
+        $file = $files[$index]['imagem'];
+        if (! $file || ! $file->isValid()) {
+            return null;
+        }
+
+        $multaImagemPath = $file->store('multas', 'public');
+
+        return url('storage/' . $multaImagemPath);
     }
 
     public function destroy($id)
